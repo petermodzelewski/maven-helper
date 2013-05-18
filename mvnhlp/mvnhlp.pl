@@ -11,21 +11,31 @@ GetOptions("env=s" => \$pickedEnv);
 
 my $xml = new XML::Simple;
 my $data = $xml->XMLin($xmlFile, ForceArray => 1, KeyAttr    => {});
-my $envs = $data->{envs}[0]->{env};
-my $config = {};
-foreach my $env (@$envs) {
-	$config->{$env->{name}} = $env->{profiles}[0]->{profile};	
-}
 
-if (! exists $config->{$pickedEnv}) {
-	print "$pickedEnv not configured, check configuration in $xmlFile";
-	exit 1;
+$envsConfig = parseEnvs($data);
+if (! exists $envsConfig->{$pickedEnv}) {
+    configError("$pickedEnv not configured"); 			
 }
 
 print "Picked env: $pickedEnv, using profiles:\n" ;
-my $pickedProfiles = $config->{$pickedEnv};
+my $pickedProfiles = $envsConfig->{$pickedEnv};
 
 foreach my $profile (@$pickedProfiles){
 	print "* $profile \n";
 }
 
+sub configError {
+	$msg = $_[0];
+	print "$msg, check configuration in $xmlFile";
+	exit 1;
+}
+
+sub parseEnvs {
+	my $envs = $_[0]->{envs}[0]->{env};
+	
+	my $config = {};
+	foreach my $env (@$envs) {
+		$config->{$env->{name}} = $env->{profiles}[0]->{profile};	
+	}	
+	return $config;
+}
