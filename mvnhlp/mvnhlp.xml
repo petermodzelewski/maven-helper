@@ -1,0 +1,15 @@
+<mvnhlp>
+	<envs>
+		<env name="test">			
+			<profiles>
+				<profile> prototype </profile>				
+			</profiles>
+		</env>
+		<env name="prod">			
+			<profiles>
+				<profile> tomcat1 </profile>
+				<profile> tomcat2 </profile>
+			</profiles>
+		</env>
+	</envs>
+</mvnhlp>
