@@ -2,7 +2,12 @@
 use XML::Simple;
 use Data::Dumper;
 use Getopt::Long;
-use Win32::Console::ANSI;
+BEGIN {	
+	if ("$^O" eq "MSWin32"){	
+		require Win32::Console::ANSI;
+        Win32::Console::ANSI->import();		
+	}
+}
 use Term::ANSIColor;
 
 my $xmlFile = "mvnhlp.xml";
