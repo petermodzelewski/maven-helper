@@ -15,14 +15,18 @@ my $data = $xml->XMLin($xmlFile, ForceArray => 1, KeyAttr    => {});
 $envsConfig = parseEnvs($data);
 $appsConfig = parseApps($data);
 
-print Dumper($appsConfig);
-
 ### Handling arguments ###
 GetOptions(	"env=s" => \$pickedEnv, 
 			"app=s" => \$pickedApp,
+			"list"  => \$list,
 			"help" => \$help);
+			
 if($help) {
 	printHelp();
+}
+
+if($list) {
+	printList();
 }
 
 if(!$pickedEnv){
@@ -83,12 +87,26 @@ sub argsError {
 	printHelp();
 }
 
+sub printList {
+	print "Configured envs:\n";	
+	foreach $name ( keys $envsConfig ) {
+		print "\t * $name \n";
+	}
+	
+	print "\nConfigured apps:\n";	
+	foreach $name ( keys $appsConfig ) {
+		print "\t * $name \n";
+	}
+	exit 1;
+}
+
 sub printHelp {
 	print "usage mvnhlp (options) ... \n";
 	print "\n\n";
 	print "Parameters:\n";
 	print "\t --env=ENV -e ENV: to specify environment to target\n";
-	print "\t --help -h: shows this message\n";
 	print "\t --app=APP_NAME -a APP_NAME: to specify application to work on";
+	print "\t --list: lists evailable applications and envs";
+	print "\t --help -h: shows this message\n";
 	exit 1;
 }
