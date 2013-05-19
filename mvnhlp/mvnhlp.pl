@@ -13,6 +13,7 @@ my $xml = new XML::Simple;
 my $data = $xml->XMLin($xmlFile, ForceArray => 1, KeyAttr    => {});
 $envsConfig = parseEnvs($data);
 $appsConfig = parseApps($data);
+$mvnConfig = parseMvn($data);
 
 ### Handling arguments ###
 GetOptions(	"env=s" => \$pickedEnv, 
@@ -63,7 +64,10 @@ foreach my $pickedAppConfig (@pickedAppConfigs) {
 
 	foreach my $profile (@pickedProfiles){
 		$pom = $pickedAppConfig->{pom};
-		$cmd = "mvn $mvnCmd -f $pom -P $profile";	
+		$cmd = "mvn $mvnCmd -f $pom -P $profile";
+		if(exists $mvnConfig->{settings}){
+			$cmd .= " -s " . $mvnConfig->{settings};
+		}
 		printInfo("\n$cmd\n\n");	
 		system($cmd);
 	}
@@ -129,6 +133,15 @@ sub pickEnvConfig() {
 		configError("Env '$pickedEnv' not configured"); 			
 	}
 	return $envsConfig->{$env};
+}
+
+sub parseMvn {
+	my $mvn = $_[0]->{mvn}[0];
+	my $result = {};
+	if(exists $mvn->{settings}){
+		$result->{settings} = $mvn->{settings}[0];
+	}
+	return $result;
 }
 
 sub parseEnvs {

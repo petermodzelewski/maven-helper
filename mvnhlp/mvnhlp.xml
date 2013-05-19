@@ -1,4 +1,7 @@
 <mvnhlp>
+	<mvn>
+		<settings>settings.xml</settings>
+	</mvn>
 	<envs>
 		<env name="test">			
 			<profiles>
