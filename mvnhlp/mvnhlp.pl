@@ -2,6 +2,8 @@
 use XML::Simple;
 use Data::Dumper;
 use Getopt::Long;
+use Win32::Console::ANSI;
+use Term::ANSIColor;
 
 my $xmlFile = "mvnhlp.xml";
 my $pickedEnv;
@@ -41,7 +43,9 @@ if(!$pickedApp) {
 
 my $pickedAppConfig = pickAppConfig($pickedApp);
 my $pickedAppName = $pickedAppConfig->{name};
-print "Picked app: $pickedAppName.\n" ;
+print "Picked app: " ;
+printInfo($pickedAppName);
+print "\n" ;
 
 my $pickedProfiles = pickEnvConfig($pickedEnv, $pickedAppConfig); 
 
@@ -49,6 +53,15 @@ print "Picked env: $pickedEnv, using profiles:\n" ;
 
 foreach my $profile (@$pickedProfiles){
 	print "* $profile \n";
+}
+
+$mvnCmd = join(" ", @ARGV);
+
+foreach my $profile (@$pickedProfiles){
+	$pom = $pickedAppConfig->{pom};
+	$cmd = "mvn $mvnCmd -f $pom -P $profile";	
+	printInfo("\n$cmd\n\n");	
+	system($cmd);
 }
 
 ### Helper functions ###
@@ -118,6 +131,18 @@ sub configError {
 	exit 1;
 }
 
+sub printInfo() {
+	$text = $_[0];
+	printInColor($text, "bold green");
+}
+
+sub printInColor(){
+	$text = $_[0];
+	$color = $_[1];
+	print color $color;
+	print "$text";
+	print color 'reset';
+}
 
 sub argsError {
 	$msg = $_[0];
@@ -149,7 +174,12 @@ sub printPoints {
 }
 
 sub printHelp {
-	print "usage mvnhlp (options) ... \n";
+	print "usage: mvnhlp (options) maven_command_list \n";
+	print "\n\n";
+	print "Examles:\n";
+	print "\t mvnhlp --env=prod --app=CoolApp clean install\n";
+	print "\t mvnhlp --env=test --app=CoolApp clean war:war tomcat:redeploy\n";
+	print "\t mvnhlp --list\n";
 	print "\n\n";
 	print "Parameters:\n";
 	print "\t --env=ENV -e ENV: to specify environment to target\n";
