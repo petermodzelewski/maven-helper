@@ -80,11 +80,11 @@ sub pickEnvConfig() {
 	$env = $_[0];
 	$appConfig = $_[1];
 	if(exists $appConfig->{envs}->{$env}){
-		print "Taking env profiles from application config\n";
+		print "Taking overwritten env profiles from application config\n";
 		return $appConfig->{envs}->{$env};
 	}
 	if (! exists $envsConfig->{$env}) {
-		configError("$pickedEnv not configured"); 			
+		configError("Env '$pickedEnv' not configured"); 			
 	}
 	return $envsConfig->{$env};
 }
