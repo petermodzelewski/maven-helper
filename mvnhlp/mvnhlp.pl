@@ -41,6 +41,8 @@ if (! exists $envsConfig->{$pickedEnv}) {
     configError("$pickedEnv not configured"); 			
 }
 
+$pickedAppConfig = pickAppConfig($pickedApp);
+
 ### WORK HERE ###
 print "Picked env: $pickedEnv, using profiles:\n" ;
 my $pickedProfiles = $envsConfig->{$pickedEnv};
@@ -50,6 +52,29 @@ foreach my $profile (@$pickedProfiles){
 }
 
 ### Helper functions ###
+
+sub pickAppConfig {
+	$search = $_[0];
+	@candidates = ();
+	foreach $name ( keys $appsConfig ) {
+		if ($name =~ m/$search/i) {
+			push(@candidates, $name);
+		}
+	}
+	$size = scalar(@candidates);
+	if($size == 0) {
+		print "Cannot match '$search' to any configured applications.\n";
+		printAppList();
+		exit(1);
+	} 
+	if($size == 1){
+		return @candidates[0];
+	}
+	
+	print "Pattern '$search' matches more than one application:\n";
+	printPoints(@candidates);
+	exit(1);
+}
 
 sub parseEnvs {
 	my $envs = $_[0]->{envs}[0]->{env};
@@ -87,17 +112,27 @@ sub argsError {
 	printHelp();
 }
 
-sub printList {
-	print "Configured envs:\n";	
-	foreach $name ( keys $envsConfig ) {
-		print "\t * $name \n";
-	}
+sub printList {	
+	printEnvList();
+	printAppList();
 	
-	print "\nConfigured apps:\n";	
-	foreach $name ( keys $appsConfig ) {
-		print "\t * $name \n";
-	}
 	exit 1;
+}
+
+sub printEnvList {
+	print "Configured envs:\n";	
+	printPoints(keys $envsConfig);	
+}
+
+sub printAppList {
+	print "\nConfigured apps:\n";	
+	print printPoints(keys $appsConfig);	
+}
+
+sub printPoints {	
+    foreach $element( @_ ) {
+			print "\t * $element \n";
+	}
 }
 
 sub printHelp {
