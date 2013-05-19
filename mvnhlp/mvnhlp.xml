@@ -12,4 +12,32 @@
 			</profiles>
 		</env>
 	</envs>
+	<applications>
+		<application name="ArchivistService">			
+			<pom>Recommendations/Offer/Archivist/Service/pom.xml</pom>			
+		</application>
+		<application name="CoolnessCalculatorService">			
+			<pom>Recommendations/Offer/CoolnessCalculator/Service/pom.xml</pom>			
+		</application>
+		<application name="MetacriticFeeder">			
+			<pom>DataMining/Metacritic/Feeder/pom.xml</pom>
+			<envs>
+				<env name="prod">			
+					<profiles>				
+						<profile> tomcat2 </profile>
+					</profiles>
+				</env>
+			</envs>
+		</application>
+		<application name="JournalReader">			
+			<pom>Recommendations/Offer/JournalReader/pom.xml</pom>
+			<envs>
+				<env name="prod">			
+					<profiles>				
+						<profile> tomcat1 </profile>
+					</profiles>
+				</env>
+			</envs>
+		</application>
+	</applications>
 </mvnhlp>
