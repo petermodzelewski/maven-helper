@@ -37,15 +37,15 @@ if(!$pickedApp) {
 	argsError("--app");
 }
 
-if (! exists $envsConfig->{$pickedEnv}) {
-    configError("$pickedEnv not configured"); 			
-}
-
-$pickedAppConfig = pickAppConfig($pickedApp);
-
 ### WORK HERE ###
+
+my $pickedAppConfig = pickAppConfig($pickedApp);
+my $pickedAppName = $pickedAppConfig->{name};
+print "Picked app: $pickedAppName.\n" ;
+
+my $pickedProfiles = pickEnvConfig($pickedEnv, $pickedAppConfig); 
+
 print "Picked env: $pickedEnv, using profiles:\n" ;
-my $pickedProfiles = $envsConfig->{$pickedEnv};
 
 foreach my $profile (@$pickedProfiles){
 	print "* $profile \n";
@@ -68,12 +68,25 @@ sub pickAppConfig {
 		exit(1);
 	} 
 	if($size == 1){
-		return @candidates[0];
+		return $appsConfig->{@candidates[0]};
 	}
 	
 	print "Pattern '$search' matches more than one application:\n";
 	printPoints(@candidates);
 	exit(1);
+}
+
+sub pickEnvConfig() {
+	$env = $_[0];
+	$appConfig = $_[1];
+	if(exists $appConfig->{envs}->{$env}){
+		print "Taking env profiles from application config\n";
+		return $appConfig->{envs}->{$env};
+	}
+	if (! exists $envsConfig->{$env}) {
+		configError("$pickedEnv not configured"); 			
+	}
+	return $envsConfig->{$env};
 }
 
 sub parseEnvs {
