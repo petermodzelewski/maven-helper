@@ -6,9 +6,6 @@ use Win32::Console::ANSI;
 use Term::ANSIColor;
 
 my $xmlFile = "mvnhlp.xml";
-my $pickedEnv;
-my $pickedApp;
-my $help;
 
 ### Reading configuration ###
 
@@ -20,6 +17,8 @@ $appsConfig = parseApps($data);
 ### Handling arguments ###
 GetOptions(	"env=s" => \$pickedEnv, 
 			"app=s" => \$pickedApp,
+			"pattern=s" => \$appPatern,
+			"P=s" => \$pickedProfile,
 			"list"  => \$list,
 			"help" => \$help);
 			
@@ -31,49 +30,68 @@ if($list) {
 	printList();
 }
 
-if(!$pickedEnv){
-	argsError("--env");	
+if(!$pickedEnv && !$pickedProfile){
+	argsError("--env or -P");	
 }
 
-if(!$pickedApp) {
-	argsError("--app");
+if(!$pickedApp && !$appPatern) {
+	argsError("--app or --pattern");
 }
 
 ### WORK HERE ###
+my @pickedAppConfigs = pickAppConfigs();
 
-my $pickedAppConfig = pickAppConfig($pickedApp);
-my $pickedAppName = $pickedAppConfig->{name};
-print "Picked app: " ;
-printInfo($pickedAppName);
-print "\n" ;
+foreach my $pickedAppConfig (@pickedAppConfigs) {
+	my $pickedAppName = $pickedAppConfig->{name};
+	print "Picked app: " ;
+	printInfo($pickedAppName);
+	print "\n" ;
 
-my $pickedProfiles = pickEnvConfig($pickedEnv, $pickedAppConfig); 
+	my @pickedProfiles = ($pickedProfile);
+	
+	if(!$pickedProfile){
+		$tmp = pickEnvConfig($pickedEnv, $pickedAppConfig);
+		@pickedProfiles = @$tmp; 
+		print "Picked env: $pickedEnv, using profiles:\n" ;
+		printPoints(@pickedProfiles);		
+	} else {
+		print "Using set profile: $pickedProfile\n";
+		
+	}	
 
-print "Picked env: $pickedEnv, using profiles:\n" ;
+	$mvnCmd = join(" ", @ARGV);
 
-foreach my $profile (@$pickedProfiles){
-	print "* $profile \n";
-}
-
-$mvnCmd = join(" ", @ARGV);
-
-foreach my $profile (@$pickedProfiles){
-	$pom = $pickedAppConfig->{pom};
-	$cmd = "mvn $mvnCmd -f $pom -P $profile";	
-	printInfo("\n$cmd\n\n");	
-	system($cmd);
+	foreach my $profile (@pickedProfiles){
+		$pom = $pickedAppConfig->{pom};
+		$cmd = "mvn $mvnCmd -f $pom -P $profile";	
+		printInfo("\n$cmd\n\n");	
+		system($cmd);
+	}
 }
 
 ### Helper functions ###
 
-sub pickAppConfig {
-	$search = $_[0];
-	@candidates = ();
-	foreach $name ( keys $appsConfig ) {
-		if ($name =~ m/$search/i) {
-			push(@candidates, $name);
+sub pickAppConfigs {
+	my @result = ();
+	if(!$appPatern){
+		@result = (pickAppConfig($pickedApp));
+	} else {
+		if ($appPatern =~ m/^all$/i) {			
+			foreach $conf (values($appsConfig)){
+				push(@result, $conf);
+			}
+		} else {		 	
+			foreach $name (filterAppConfigByPattern($appPatern)) {
+				push(@result, $appsConfig->{$name});
+			}
 		}
 	}
+	return @result;
+}
+
+sub pickAppConfig {
+	$search = $_[0];
+	@candidates = filterAppConfigByPattern($search);	
 	$size = scalar(@candidates);
 	if($size == 0) {
 		print "Cannot match '$search' to any configured applications.\n";
@@ -87,6 +105,17 @@ sub pickAppConfig {
 	print "Pattern '$search' matches more than one application:\n";
 	printPoints(@candidates);
 	exit(1);
+}
+
+sub filterAppConfigByPattern {
+	$search = $_[0];
+	@candidates = ();
+	foreach $name ( keys $appsConfig ) {
+		if ($name =~ m/$search/i) {
+			push(@candidates, $name);
+		}
+	}
+	return @candidates;
 }
 
 sub pickEnvConfig() {
@@ -131,19 +160,6 @@ sub configError {
 	exit 1;
 }
 
-sub printInfo() {
-	$text = $_[0];
-	printInColor($text, "bold green");
-}
-
-sub printInColor(){
-	$text = $_[0];
-	$color = $_[1];
-	print color $color;
-	print "$text";
-	print color 'reset';
-}
-
 sub argsError {
 	$msg = $_[0];
 	print "$msg not set, see help for details \n\n";
@@ -177,14 +193,41 @@ sub printHelp {
 	print "usage: mvnhlp (options) maven_command_list \n";
 	print "\n\n";
 	print "Examles:\n";
+	print color "bold";
 	print "\t mvnhlp --env=prod --app=CoolApp clean install\n";
 	print "\t mvnhlp --env=test --app=CoolApp clean war:war tomcat:redeploy\n";
+	print "\t mvnhlp --env=test --pattern=Service clean war:war tomcat:redeploy\n";
+	print "\t mvnhlp -P tomcat1 --pattern=all clean war:war tomcat:redeploy\n";
 	print "\t mvnhlp --list\n";
 	print "\n\n";
+	print color 'reset';
 	print "Parameters:\n";
-	print "\t --env=ENV -e ENV: to specify environment to target\n";
-	print "\t --app=APP_NAME -a APP_NAME: to specify application to work on";
-	print "\t --list: lists evailable applications and envs";
-	print "\t --help -h: shows this message\n";
+	printParam("-P MVN_PROFILE", "to specify profile");	
+	printParam("--env=ENV", "to specify environment to target");		
+	printParam("--app=APP_NAME", "tto specify application to work on, or use");	
+	printParam("--pattern=APP_NAME_PATTERN", "command will be used to each application, which name matches pattern. use 'all' to run command list on every application");	
+	printParam("--list", "lists evailable applications and envs");	
+	printParam("--help", "shows this message");	
 	exit 1;
+}
+
+sub printParam() {
+	$param = $_[0];
+	$description = $_[1];
+	print "\t";
+	printInfo($param);
+	print " $description\n";
+}
+
+sub printInfo() {
+	$text = $_[0];
+	printInColor($text, "bold green");
+}
+
+sub printInColor(){
+	$text = $_[0];
+	$color = $_[1];
+	print color $color;
+	print "$text";
+	print color 'reset';
 }
