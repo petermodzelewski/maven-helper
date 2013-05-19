@@ -3,6 +3,7 @@ maven-helper
 
 Tool written in Perl to help with maven commands to be run on multiple profiles or binding profiles to env's.
 
+```
 usage: mvnhlp (options) maven_command_list
 
 Examles:
@@ -20,3 +21,4 @@ Parameters:
         --pattern=APP_NAME_PATTERN command will be used to each application, which name matches pattern. use 'all' to run command list on every application
         --list lists evailable applications and envs
         --help shows this message
+```
